@@ -1,10 +1,11 @@
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Arrays;
 
 public class Wreek1_5 {
 
     /*
-     * create array 1 dimantion use class Scanner for input n 
+     * 1. create array 1 dimantion use class Scanner for input n 
      * and random charactor A-Z search charactor 
      */
 
@@ -65,7 +66,50 @@ public class Wreek1_5 {
 
         return -1;
     }
+
+    //*************************************************End*******************************************************//
+
+    /*
+     * 2. input Number put in array 1 dimantion size of array (n)
+     *    and sort Number 
+     */
+
+    public static String inputFunction(String text) {
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.print(text);
+        String input = scanner.nextLine();
+
+        return input;
+    }
+    
+    public static int[] inputArray() {
+
+        int n = Integer.parseInt(inputFunction("Please input size of array(n): "));
+        int[] numArray = new int[n];
+
+        Scanner scanner = new Scanner(System.in);
+        for (int i = 0; i < n; i++) {
+            System.out.print("Element " + (i + 1) + ": ");
+            numArray[i] = scanner.nextInt();
+        }
+
+        return numArray;
+
+    }
+
+    public static void sortNumber(int[] numArray) {
+        Arrays.sort(numArray);
+ 
+        System.out.println("You entered:");
+        for (int i = 0; i < numArray.length; i++) {
+            System.out.println("Element at index " + i + ": " + numArray[i]);
+        }
+
+    }
+
     public static void main(String[] args) {
-        printResult();
+        //printResult();
+        sortNumber(inputArray());
     }
 }
