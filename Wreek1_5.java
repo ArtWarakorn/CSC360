@@ -99,6 +99,7 @@ public class Wreek1_5 {
     }
 
     public static void sortNumber(int[] numArray) {
+        
         Arrays.sort(numArray);
  
         System.out.println("You entered:");
