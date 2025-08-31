@@ -9,8 +9,7 @@ public class SelectSort {
 
         //time start
         long start, stop;
-        Date time1 = new Date();
-        start = time1.getTime();
+        start = System.nanoTime();
 
         Scanner scan = new Scanner(System.in);
         Random rd = new Random();
@@ -20,7 +19,7 @@ public class SelectSort {
         int n = scan.nextInt();
 
         //create array size (n)
-        int a[] = new int[n];
+        int a[] = new int[n];   
 
         //loop random value in array
         System.out.print("Original array: ");
@@ -53,9 +52,9 @@ public class SelectSort {
         scan.close();
 
         //stop time
-        Date time2 = new Date();
-        stop = time2.getTime();
-        double runTime = (double)(stop - start)/1000.0;
+
+        stop = System.nanoTime();
+        double runTime = (double)(stop - start)/1_000_000_000.0;    
 
         System.out.println(runTime + " sec");
     }
