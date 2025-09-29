@@ -1,11 +1,22 @@
 package HomeWork1;
-import java.util.Scanner;
-import java.util.Random;
-import java.util.Date;
 
-public class SelectSort {
+import java.util.Random;
+import java.util.Scanner;
+
+public class InsertionSort {
+
+    public static void insertSort(int array[]) {
+        for (int i = 1; i < array.length; i++) {
+            int temp = array[i];
+            int j = i - 1;
+
+            while (j >= 0 && array[j] > temp) {
+                array[j + 1] = array[j];
+                j--;
+            }
+        }
+    }
     public static void main(String[] args) {
-        
         //time start
         long start, stop;
         start = System.nanoTime();
@@ -30,20 +41,8 @@ public class SelectSort {
         }
         System.out.println(); // Add a newline for better formatting
         
-        // Selection sort algorith
-        for(int i = 0; i < a.length-1; i++) {
-            int min_idx = i;
-            for(int j = i + 1; j < a.length; j++) {
-                if(a[j] < a[min_idx]) 
-                    min_idx = j;
-                }
-            
-            // Swap the found minimum element with the first element
-            int tmp = a[min_idx];
-            a[min_idx] = a[i];
-            a[i] = tmp;
-        }
-
+        //insert sort algorith
+        insertSort(a);
         // Print the sorted array
         System.out.print("Sorted array: ");
         for (int i = 0; i < a.length; i++) {

@@ -1,3 +1,5 @@
+package TestSort;
+
 public class Swap {
     public static void main(String[] args) {
         int a[] = {3,7,5};
