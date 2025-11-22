@@ -1,5 +1,6 @@
 package ExamSort;
 
+import java.util.Scanner;
 import Sort.RandomArray;
 
 public class ExTest {
@@ -11,8 +12,10 @@ public class ExTest {
         ExSort sort = new ExSort();
         sort.bubbleSort(array);
 
-        for (int i = 0; i < array.length; i++) {
-            System.out.print(array[i] + " ");
-        }
+        Scanner sc = new Scanner(System.in);
+        int key = sc.nextInt();
+
+        BinarySearch search = new BinarySearch();
+        search.binarySearch(array, key);
     }
 }
