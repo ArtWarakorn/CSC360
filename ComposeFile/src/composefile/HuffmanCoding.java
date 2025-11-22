@@ -188,41 +188,37 @@ public class HuffmanCoding {
         long[] freq = buildFrequencyTable(inFile);
         Node root = buildHuffmanTree(freq);
 
-        // build code map
         String[] codeMap = new String[256];
         if (root != null) {
             buildCodeMap(root, "", codeMap);
         }
 
-        // count original size
         long originalSize = 0;
         for (long f : freq) {
             originalSize += f;
         }
 
-        try (DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputPath)))) {
-            // Write frequency table (256 longs)
-            for (int i = 0; i < 256; i++) {
-                dos.writeLong(freq[i]);
-            }
-            // Write original size
-            dos.writeLong(originalSize);
-            dos.flush();
+        // เปิด stream เขียนไฟล์
+        try (OutputStream fos = new BufferedOutputStream(new FileOutputStream(outputPath))) {
 
-            // Now write compressed bits
-            try (BitOutputStream bos = new BitOutputStream(dos)) {
-                try (InputStream in = new BufferedInputStream(new FileInputStream(inFile))) {
-                    int b;
-                    while ((b = in.read()) != -1) {
-                        String code = codeMap[b & 0xFF];
-                        // should not be null if freq built correctly
-                        if (code == null) {
-                            throw new IOException("No code for byte: " + (b & 0xFF));
-                        }
-                        bos.writeBits(code);
-                    }
+            // ➤ 1) เขียน Frequency table แบบ RAW 256 * 8 bytes
+            DataOutputStream dosHeader = new DataOutputStream(fos);
+
+            for (int i = 0; i < 256; i++) {
+                dosHeader.writeLong(freq[i]);
+            }
+            dosHeader.writeLong(originalSize);
+            dosHeader.flush();  // สำคัญมาก
+
+            // ➤ 2) เริ่มเขียนบิท Huffman
+            try (BitOutputStream bos = new BitOutputStream(fos)) {
+                InputStream in = new BufferedInputStream(new FileInputStream(inFile));
+
+                int b;
+                while ((b = in.read()) != -1) {
+                    bos.writeBits(codeMap[b & 0xFF]);
                 }
-                // bos.close() will flush remaining bits
+                bos.flush();
             }
         }
     }
@@ -234,7 +230,11 @@ public class HuffmanCoding {
 
     // Decompress file
     public static void decompress(String inputPath, String outputPath) throws IOException {
-        try (DataInputStream dis = new DataInputStream(new BufferedInputStream(new FileInputStream(inputPath)))) {
+
+        try (InputStream fis = new BufferedInputStream(new FileInputStream(inputPath))) {
+
+            DataInputStream dis = new DataInputStream(fis);
+
             long[] freq = new long[256];
             for (int i = 0; i < 256; i++) {
                 freq[i] = dis.readLong();
@@ -242,59 +242,22 @@ public class HuffmanCoding {
             long originalSize = dis.readLong();
 
             Node root = buildTreeFromFreq(freq);
-            if (root == null) {
-                // empty file case -> create empty output
-                new File(outputPath).createNewFile();
-                return;
-            }
 
-            try (BitInputStream bis = new BitInputStream(dis); OutputStream out = new BufferedOutputStream(new FileOutputStream(outputPath))) {
+            try (BitInputStream bis = new BitInputStream(fis); OutputStream out = new BufferedOutputStream(new FileOutputStream(outputPath))) {
 
+                Node curr = root;
                 long written = 0;
-                Node current = root;
-                // If tree was created with single leaf and parent with right==null, handle carefully:
-                if (root.isLeaf()) {
-                    // every code is the single value
-                    while (written < originalSize) {
-                        out.write(root.value);
-                        written++;
-                    }
-                    return;
-                }
 
                 int bit;
                 while (written < originalSize && (bit = bis.readBit()) != -1) {
-                    // traverse
-                    if (bit == 0) {
-                        if (current.left != null) {
-                            current = current.left;
-                        } else {
-                            // malformed stream
-                            throw new IOException("Malformed bitstream (no left child)");
-                        }
-                    } else {
-                        if (current.right != null) {
-                            current = current.right;
-                        } else {
-                            // malformed stream
-                            throw new IOException("Malformed bitstream (no right child)");
-                        }
-                    }
+                    curr = (bit == 0) ? curr.left : curr.right;
 
-                    if (current.isLeaf()) {
-                        out.write(current.value);
+                    if (curr.isLeaf()) {
+                        out.write(curr.value);
                         written++;
-                        current = root;
+                        curr = root;
                     }
                 }
-
-                if (written != originalSize) {
-                    // Could be leftover padded bits at the end; but if mismatch too large, warn
-                    // For safety, we simply close (in many implementations originalSize controls stop)
-                    // Optionally: throw new IOException("Decompressed size mismatch");
-                }
-
-                out.flush();
             }
         }
     }
@@ -311,32 +274,43 @@ public class HuffmanCoding {
         }
     }
 
-    // Main: compress or decompress
-    public static void main(String[] args) {
-        if (args.length != 3) {
-            System.out.println("Usage:");
-            System.out.println("  java HuffmanCoding c inputFile outputFile   # compress");
-            System.out.println("  java HuffmanCoding d inputFile outputFile   # decompress");
-            return;
+    public static void compressToText(String inputPath, String outputPath) throws IOException {
+        File inFile = new File(inputPath);
+        if (!inFile.exists()) {
+            throw new FileNotFoundException("Input file not found: " + inputPath);
         }
-        String mode = args[0];
-        String in = args[1];
-        String out = args[2];
 
-        try {
-            if (mode.equalsIgnoreCase("c")) {
-                System.out.println("Compressing " + in + " -> " + out);
-                compress(in, out);
-                System.out.println("Compression finished.");
-            } else if (mode.equalsIgnoreCase("d")) {
-                System.out.println("Decompressing " + in + " -> " + out);
-                decompress(in, out);
-                System.out.println("Decompression finished.");
-            } else {
-                System.err.println("Unknown mode: " + mode);
+        // 1. สร้าง frequency table
+        long[] freq = buildFrequencyTable(inFile);
+        Node root = buildHuffmanTree(freq);
+
+        // 2. สร้าง code map
+        String[] codeMap = new String[256];
+        buildCodeMap(root, "", codeMap);
+
+        // 3. อ่านไฟล์แล้วแปลงเป็น bit-string
+        StringBuilder encoded = new StringBuilder();
+        try (InputStream in = new FileInputStream(inFile)) {
+            int b;
+            while ((b = in.read()) != -1) {
+                encoded.append(codeMap[b & 0xFF]);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        }
+
+        // 4. บันทึกลงไฟล์ .txt ที่อ่านได้
+        try (PrintWriter pw = new PrintWriter(new FileWriter(outputPath))) {
+
+            pw.println("#CODETABLE");
+            for (int i = 0; i < 256; i++) {
+                if (codeMap[i] != null) {
+                    char c = (char) i;
+                    String key = (Character.isISOControl(c) ? String.format("\\x%02X", i) : Character.toString(c));
+                    pw.println(key + ":" + codeMap[i]);
+                }
+            }
+
+            pw.println("#DATA");
+            pw.println(encoded.toString());
         }
     }
 }

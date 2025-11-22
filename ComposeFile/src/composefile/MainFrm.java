@@ -140,8 +140,8 @@ public class MainFrm extends javax.swing.JFrame {
                 outputPath += ".txt";
             }
 
-            // เรียกใช้ HuffmanCoding.compress
-            HuffmanCoding.compress(inputPath, outputPath);
+            // ⭐ เรียกใช้การบีบอัดแบบ text-based Huffman
+            HuffmanCoding.compressToText(inputPath, outputPath);
 
             JOptionPane.showMessageDialog(this,
                     "Compose file finished!\nSaved at: " + outputPath,
