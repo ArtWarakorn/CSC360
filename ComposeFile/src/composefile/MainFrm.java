@@ -96,6 +96,7 @@ public class MainFrm extends javax.swing.JFrame {
         );
 
         pack();
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnBrowseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBrowseActionPerformed
@@ -112,7 +113,6 @@ public class MainFrm extends javax.swing.JFrame {
 
     private void btnComposeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnComposeActionPerformed
         try {
-            // อ่าน path ไฟล์ต้นฉบับ
             String inputPath = txtPath.getText().trim();
 
             if (inputPath.isEmpty()) {
@@ -120,31 +120,34 @@ public class MainFrm extends javax.swing.JFrame {
                 return;
             }
 
-            // เปิดหน้าต่าง Save Dialog
             JFileChooser saveChooser = new JFileChooser();
             saveChooser.setDialogTitle("Save compressed text file");
-            saveChooser.setSelectedFile(new File("compressed.txt"));  // ชื่อไฟล์เริ่มต้น
+            saveChooser.setSelectedFile(new File("compressed.txt"));
 
             int userSelection = saveChooser.showSaveDialog(this);
 
             if (userSelection != JFileChooser.APPROVE_OPTION) {
-                return; // ผู้ใช้กด Cancel
+                return;
             }
 
-            // Path ที่ผู้ใช้ต้องการบันทึก
             File saveFile = saveChooser.getSelectedFile();
             String outputPath = saveFile.getAbsolutePath();
 
-            // ถ้าไม่มีนามสกุล .txt ให้ใส่ให้เอง
             if (!outputPath.toLowerCase().endsWith(".txt")) {
                 outputPath += ".txt";
             }
 
-            // ⭐ เรียกใช้การบีบอัดแบบ text-based Huffman
+            // ⭐ 1) บีบอัดไฟล์เป็น text
             HuffmanCoding.compressToText(inputPath, outputPath);
 
+            // ⭐ 2) ถอดไฟล์อัตโนมัติเป็นไฟล์ต้นฉบับ
+            String decompressedPath = outputPath.replace(".txt", "_decoded.txt");
+            HuffmanCoding.decompressFromText(outputPath, decompressedPath);
+
             JOptionPane.showMessageDialog(this,
-                    "Compose file finished!\nSaved at: " + outputPath,
+                    "Compression and Auto-Decompression finished!\n"
+                    + "Compressed: " + outputPath + "\n"
+                    + "Decoded: " + decompressedPath,
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE);
 

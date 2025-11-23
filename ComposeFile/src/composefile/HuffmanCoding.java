@@ -313,4 +313,67 @@ public class HuffmanCoding {
             pw.println(encoded.toString());
         }
     }
+
+    public static void decompressFromText(String inputPath, String outputPath) throws IOException {
+
+        Map<String, Integer> reverseMap = new HashMap<>();
+        StringBuilder encodedData = new StringBuilder();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(inputPath))) {
+
+            String line;
+            boolean readingData = false;
+
+            while ((line = br.readLine()) != null) {
+
+                if (line.equals("#DATA")) {
+                    readingData = true;
+                    continue;
+                }
+
+                if (!readingData) {
+                    // อ่าน Code Table
+                    if (line.equals("#CODETABLE") || line.trim().isEmpty()) {
+                        continue;
+                    }
+
+                    // รูปแบบ: char:bits
+                    int idx = line.indexOf(':');
+                    if (idx > 0) {
+                        String key = line.substring(0, idx);
+                        String bits = line.substring(idx + 1);
+
+                        int value;
+                        if (key.startsWith("\\x")) {
+                            // control char
+                            value = Integer.parseInt(key.substring(2), 16);
+                        } else {
+                            value = key.charAt(0);
+                        }
+
+                        reverseMap.put(bits, value);
+                    }
+
+                } else {
+                    // อ่าน DATA (bit-string)
+                    encodedData.append(line.trim());
+                }
+            }
+        }
+
+        // Decode
+        try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(outputPath))) {
+            String bits = encodedData.toString();
+            StringBuilder curr = new StringBuilder();
+
+            for (int i = 0; i < bits.length(); i++) {
+                curr.append(bits.charAt(i));
+
+                if (reverseMap.containsKey(curr.toString())) {
+                    out.write(reverseMap.get(curr.toString()));
+                    curr.setLength(0);
+                }
+            }
+        }
+    }
 }
